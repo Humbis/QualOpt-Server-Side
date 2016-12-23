@@ -24,6 +24,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import domain.DatabaseConnection;
+import domain.Study;
 import domain.User;
 
 @Path("/user")
@@ -31,6 +32,7 @@ public class UserServices {
 
 	private static User currentUser;
 	private static boolean isLoggedIn = false;
+	private static Study currentStudy;
 
 	@POST
 	@Path("/newuser")
@@ -68,33 +70,66 @@ public class UserServices {
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	public Response login(@FormParam("email") String email, @FormParam("password") String password,
 			@Context HttpServletResponse servletResponse) throws Exception {
-		try{
+		try {
 			DatabaseConnection database = new DatabaseConnection();
 			Connection con = database.getConnection();
 			String sql = "SELECT * FROM USER_PROFILES";
 			PreparedStatement st = con.prepareStatement(sql);
-			ResultSet rs  = st.executeQuery();
-			
+			ResultSet rs = st.executeQuery();
+
 			Logger lgr = Logger.getLogger(DatabaseConnection.class.getName());
 			lgr.log(Level.INFO, "email is: " + email + " pass is: " + password);
-			
-			while (rs.next()){
-				lgr.log(Level.INFO, " db email is: " + rs.getString("EMAIL") + " db pass is: " +  rs.getString("PASSWORD"));
-				
-				if(rs.getString("EMAIL").equals(email) && rs.getString("PASSWORD").equals(password)){
+
+			while (rs.next()) {
+				lgr.log(Level.INFO,
+						" db email is: " + rs.getString("EMAIL") + " db pass is: " + rs.getString("PASSWORD"));
+
+				if (rs.getString("EMAIL").equals(email) && rs.getString("PASSWORD").equals(password)) {
 					lgr.log(Level.INFO, "Found a match!");
 					currentUser = new User();
 					currentUser.setEmail(email);
 					currentUser.setPassword(password);
-					
+
 					isLoggedIn = true;
 					return Response.status(Status.ACCEPTED).build();
 				}
 			}
-		}catch (Exception e){
+		} catch (Exception e) {
 			throw e;
 		}
 		return Response.status(Status.FORBIDDEN).build();
 	}
 
+	@POST
+	@Path("/newstudy")
+	@Produces(MediaType.APPLICATION_XML)
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	public Response newStudy(@FormParam("name") String name, @FormParam("description") String description,
+			@FormParam("incentive") String incentive, @FormParam("hasPay") Boolean hasPay) throws Exception {
+		
+		currentStudy = new Study();
+		currentStudy.setOwnerEmail(currentUser.getEmail());
+		currentStudy.setDescription(description);
+		currentStudy.setIncentive(incentive);
+		currentStudy.setName(name);
+		currentStudy.setPaid(hasPay);
+		
+		try {
+			DatabaseConnection database = new DatabaseConnection();
+			Connection con = database.getConnection();
+			String sql = "INSERT INTO STUDY SET U_ID =("
+					+ "SELECT ID FROM USER_PROFILES WHERE EMAIL = '" + currentStudy.getOwnerEmail() + "'),"
+					+ " NAME = '"+ name +"', "
+					+ " DESCRIPTION = '"+ description +"',"
+					+ " INCENTIVE = '"+ incentive +"',"
+					+ " HASPAY = '"+ hasPay +"';";
+			PreparedStatement st = con.prepareStatement(sql);
+			ResultSet rs = st.executeQuery();
+
+		} catch (Exception e) {
+			throw e;
+		}
+		
+		return null;
+	}
 }
