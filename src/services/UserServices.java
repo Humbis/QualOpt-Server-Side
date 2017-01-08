@@ -105,14 +105,23 @@ public class UserServices {
 	@Produces(MediaType.APPLICATION_XML)
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	public Response newStudy(@FormParam("name") String name, @FormParam("description") String description,
-			@FormParam("incentive") String incentive, @FormParam("hasPay") Boolean hasPay) throws Exception {
+			@FormParam("incentive") String incentive, @FormParam("hasPay") String hasPay) throws Exception {
 		
 		currentStudy = new Study();
 		currentStudy.setOwnerEmail(currentUser.getEmail());
 		currentStudy.setDescription(description);
 		currentStudy.setIncentive(incentive);
 		currentStudy.setName(name);
-		currentStudy.setPaid(hasPay);
+		
+		int sqlHasPay;
+		
+		if(hasPay != null){
+			currentStudy.setPaid(true);
+			sqlHasPay = 1;
+		}else{
+			currentStudy.setPaid(false);
+			sqlHasPay = 0;
+		}
 		
 		try {
 			DatabaseConnection database = new DatabaseConnection();
@@ -122,9 +131,9 @@ public class UserServices {
 					+ " NAME = '"+ name +"', "
 					+ " DESCRIPTION = '"+ description +"',"
 					+ " INCENTIVE = '"+ incentive +"',"
-					+ " HASPAY = '"+ hasPay +"';";
+					+ " HASPAY = '"+ sqlHasPay +"';";
 			PreparedStatement st = con.prepareStatement(sql);
-			ResultSet rs = st.executeQuery();
+			st.execute();
 
 		} catch (Exception e) {
 			throw e;

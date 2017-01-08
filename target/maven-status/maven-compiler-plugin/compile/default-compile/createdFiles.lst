@@ -1,4 +1,5 @@
 domain\DatabaseConnection.class
 domain\User.class
 services\QualOptServerApplication.class
+domain\Study.class
 services\UserServices.class
