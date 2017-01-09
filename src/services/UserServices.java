@@ -5,6 +5,7 @@ import java.net.URI;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.List;
 
 import java.util.logging.Level;
@@ -140,5 +141,34 @@ public class UserServices {
 		}
 		
 		return null;
+	}
+	
+	@GET
+	@Path("/allstudies")
+	@Produces("application/json")
+	public String getAllStudies() throws Exception{
+		List<Study> allStudies = new ArrayList<Study>();
+		try {
+			DatabaseConnection database = new DatabaseConnection();
+			Connection con = database.getConnection();
+			String sql = "SELECT * FROM STUDY";
+			PreparedStatement st = con.prepareStatement(sql);
+			ResultSet rs = st.executeQuery();
+			
+			while (rs.next()) {
+				Study study = new Study();
+				study.setDescription(rs.getString("DESCRIPTION"));
+				study.setName(rs.getString("NAME"));
+				study.setIncentive(rs.getString("INCENTIVE"));
+				study.setOwnerEmail(currentUser.getEmail());
+				study.setPaid(rs.getBoolean("HASPAY"));
+				
+				allStudies.add(study);
+			}
+
+		} catch (Exception e) {
+			throw e;
+		}
+		return allStudies.toString();
 	}
 }
