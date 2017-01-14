@@ -7,10 +7,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -35,6 +42,10 @@ public class UserServices {
 	private static boolean isLoggedIn = false;
 	private static Study currentStudy;
 
+	private static Properties mailServerProperties;
+	private static Session getMailSession;
+	private static MimeMessage generateMailMessage;
+	
 	@POST
 	@Path("/newuser")
 	@Produces(MediaType.APPLICATION_XML)
@@ -170,5 +181,31 @@ public class UserServices {
 			throw e;
 		}
 		return allStudies.toString();
+	}
+	
+	@POST
+	@Path("/email")
+	@Produces(MediaType.APPLICATION_XML)
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	public Response emailParticipants(@FormParam("senderemail") String sender,@FormParam("subject") String subject, @FormParam("emailbody") String email) throws Exception{
+		mailServerProperties = System.getProperties();
+		mailServerProperties.put("mail.smtp.port", "587");
+		mailServerProperties.put("mail.smtp.auth", "true");
+		mailServerProperties.put("mail.smtp.starttls.enable", "true");
+		
+		getMailSession = Session.getDefaultInstance(mailServerProperties, null);
+		generateMailMessage = new MimeMessage(getMailSession);
+		generateMailMessage.setFrom(new InternetAddress(sender));
+		generateMailMessage.addRecipient(Message.RecipientType.TO, new InternetAddress("experimental1499@gmail.com")); //Using my email to test
+		generateMailMessage.setSubject(subject);
+		generateMailMessage.setContent(email, "text/html");
+		
+		Transport transport = getMailSession.getTransport("smtp");
+		
+		transport.connect("smtp.gmail.com", "experimentalsender@gmail.com", "test1499");
+		transport.sendMessage(generateMailMessage, generateMailMessage.getAllRecipients());
+		transport.close();
+		
+		return Response.status(Status.ACCEPTED).build();
 	}
 }
