@@ -1,5 +1,9 @@
 C:\Users\alex\workspace\QualOptServer\src\domain\DatabaseConnection.java
 C:\Users\alex\workspace\QualOptServer\src\services\UserServices.java
+C:\Users\alex\workspace\QualOptServer\src\services\Secured.java
 C:\Users\alex\workspace\QualOptServer\src\domain\Study.java
 C:\Users\alex\workspace\QualOptServer\src\domain\User.java
 C:\Users\alex\workspace\QualOptServer\src\services\QualOptServerApplication.java
+C:\Users\alex\workspace\QualOptServer\src\services\SessionIdentifierGenerator.java
+C:\Users\alex\workspace\QualOptServer\src\domain\LoginSession.java
+C:\Users\alex\workspace\QualOptServer\src\services\AuthenticationFilter.java

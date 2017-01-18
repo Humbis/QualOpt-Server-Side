@@ -1,5 +1,9 @@
-domain\DatabaseConnection.class
-domain\User.class
+services\AuthenticationFilter.class
 services\QualOptServerApplication.class
+domain\LoginSession.class
 domain\Study.class
 services\UserServices.class
+domain\DatabaseConnection.class
+domain\User.class
+services\SessionIdentifierGenerator.class
+services\Secured.class

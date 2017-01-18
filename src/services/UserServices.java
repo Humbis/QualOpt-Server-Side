@@ -31,15 +31,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import domain.DatabaseConnection;
-import domain.Study;
-import domain.User;
+import domain.*;
 
 @Path("/user")
 public class UserServices {
 
-	private static User currentUser;
-	private static boolean isLoggedIn = false;
+	public static ArrayList<LoginSession> sessions = new ArrayList<LoginSession>();
+	public static String currentUserEmail;
 	private static Study currentStudy;
 
 	private static Properties mailServerProperties;
@@ -78,7 +76,7 @@ public class UserServices {
 
 	@POST
 	@Path("/login")
-	@Produces(MediaType.APPLICATION_XML)
+	@Produces("application/json")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	public Response login(@FormParam("email") String email, @FormParam("password") String password,
 			@Context HttpServletResponse servletResponse) throws Exception {
@@ -98,12 +96,15 @@ public class UserServices {
 
 				if (rs.getString("EMAIL").equals(email) && rs.getString("PASSWORD").equals(password)) {
 					lgr.log(Level.INFO, "Found a match!");
-					currentUser = new User();
-					currentUser.setEmail(email);
-					currentUser.setPassword(password);
-
-					isLoggedIn = true;
-					return Response.status(Status.ACCEPTED).build();
+					
+					SessionIdentifierGenerator tokenGen = new SessionIdentifierGenerator();
+					String token = tokenGen.nextSessionId();
+					String tokenJSON = tokenGen.tokenToJSON(token);
+					
+					sessions.add(new LoginSession(token, email));
+					
+					System.out.println("There are this many sessions: " + sessions.size());
+					return Response.status(Status.ACCEPTED).entity(tokenJSON).build();
 				}
 			}
 		} catch (Exception e) {
@@ -112,6 +113,7 @@ public class UserServices {
 		return Response.status(Status.FORBIDDEN).build();
 	}
 
+	@Secured
 	@POST
 	@Path("/newstudy")
 	@Produces(MediaType.APPLICATION_XML)
@@ -120,7 +122,7 @@ public class UserServices {
 			@FormParam("incentive") String incentive, @FormParam("hasPay") String hasPay) throws Exception {
 		
 		currentStudy = new Study();
-		currentStudy.setOwnerEmail(currentUser.getEmail());
+		currentStudy.setOwnerEmail(currentUserEmail);
 		currentStudy.setDescription(description);
 		currentStudy.setIncentive(incentive);
 		currentStudy.setName(name);
@@ -154,6 +156,7 @@ public class UserServices {
 		return null;
 	}
 	
+	@Secured
 	@GET
 	@Path("/allstudies")
 	@Produces("application/json")
@@ -171,7 +174,7 @@ public class UserServices {
 				study.setDescription(rs.getString("DESCRIPTION"));
 				study.setName(rs.getString("NAME"));
 				study.setIncentive(rs.getString("INCENTIVE"));
-				study.setOwnerEmail(currentUser.getEmail());
+				study.setOwnerEmail(currentUserEmail);
 				study.setPaid(rs.getBoolean("HASPAY"));
 				
 				allStudies.add(study);
@@ -183,6 +186,7 @@ public class UserServices {
 		return allStudies.toString();
 	}
 	
+	@Secured
 	@POST
 	@Path("/email")
 	@Produces(MediaType.APPLICATION_XML)
