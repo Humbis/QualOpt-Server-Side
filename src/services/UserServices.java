@@ -31,6 +31,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import domain.*;
 
 @Path("/user")
@@ -50,22 +53,21 @@ public class UserServices {
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	public Response createUsers(@FormParam("email") String email, @FormParam("password") String password,
 			@FormParam("profession") String profession, @FormParam("institute") String institute,
-			@FormParam("description") String description, @Context HttpServletResponse servletResponse)
+			@FormParam("mailserver") String mailServer ,@Context HttpServletResponse servletResponse)
 			throws Exception {
 
-		User user = new User(email, password, profession, institute, description);
+		User user = new User(email, password, profession, institute, mailServer);
 		try {
 			DatabaseConnection database = new DatabaseConnection();
 			Connection con = database.getConnection();
-			String sql = "INSERT INTO USER_PROFILES (email, password, profession, institute, description) "
+			String sql = "INSERT INTO USER_PROFILES (email, password, profession, institute, mailserver) "
 					+ "values (?, ?, ?, ?, ?)";
 			PreparedStatement st = con.prepareStatement(sql);
 			st.setString(1, email);
 			st.setString(2, password);
 			st.setString(3, profession);
 			st.setString(4, institute);
-			st.setString(5, description);
-
+			st.setString(5, mailServer);
 			st.execute();
 			con.close();
 		} catch (Exception e) {
@@ -157,6 +159,22 @@ public class UserServices {
 	}
 	
 	@Secured
+	@POST
+	@Path("/currentstudy")
+	@Consumes({"text/plain,text/html,application/json"})
+	public void setCurrentStudy(String studyJSON){
+		JsonParser parser = new JsonParser();
+		JsonObject studyJ = parser.parse(studyJSON).getAsJsonObject();
+		
+		currentStudy = new Study();
+		currentStudy.setName(studyJ.get("name").getAsString());
+		currentStudy.setDescription(studyJ.get("description").getAsString());
+		currentStudy.setIncentive(studyJ.get("incentive").getAsString());
+		currentStudy.setPaid(studyJ.get("haspay").getAsBoolean());
+		
+	}
+	
+	@Secured
 	@GET
 	@Path("/allstudies")
 	@Produces("application/json")
@@ -191,7 +209,7 @@ public class UserServices {
 	@Path("/email")
 	@Produces(MediaType.APPLICATION_XML)
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-	public Response emailParticipants(@FormParam("senderemail") String sender,@FormParam("subject") String subject, @FormParam("emailbody") String email) throws Exception{
+	public Response emailParticipants(@FormParam("senderemail") String sender , @FormParam("surveylink") String surveyLink ,@FormParam("subject") String subject, @FormParam("emailbody") String email) throws Exception{
 		mailServerProperties = System.getProperties();
 		mailServerProperties.put("mail.smtp.port", "587");
 		mailServerProperties.put("mail.smtp.auth", "true");
@@ -202,6 +220,10 @@ public class UserServices {
 		generateMailMessage.setFrom(new InternetAddress(sender));
 		generateMailMessage.addRecipient(Message.RecipientType.TO, new InternetAddress("experimental1499@gmail.com")); //Using my email to test
 		generateMailMessage.setSubject(subject);
+		
+		email = new StringBuilder().append(email).append("<br/><br/><br/>").append("Survey link: ").append(surveyLink)
+				.append("<br/>").append(currentStudy.getDescription()).append("<br/>").append(currentStudy.getIncentive()).toString();
+		
 		generateMailMessage.setContent(email, "text/html");
 		
 		Transport transport = getMailSession.getTransport("smtp");

@@ -13,19 +13,28 @@ public class User implements Serializable {
 	private String password;
 	private String profession;
 	private String institution;
-	private String description;
+	private String mailServer;
 
 	public User() {
 	}
 
-	public User(String name, String password, String profession, String institution, String description) {
+	public User(String name, String password, String profession, String institution, String mailServer) {
 		this.email = name;
 		this.password = password;
 		this.profession = profession;
 		this.institution = institution;
-		this.description = description;
+		this.mailServer = mailServer;
 	}
 
+
+	public String getMailServer() {
+		return mailServer;
+	}
+
+	@XmlElement
+	public void setMailServer(String mailServer) {
+		this.mailServer = mailServer;
+	}
 
 	public String getEmail() {
 		return email;
@@ -63,12 +72,4 @@ public class User implements Serializable {
 		this.password = password;
 	}
 
-	public String getDescription() {
-		return description;
-	}
-
-	@XmlElement
-	public void setDescription(String description) {
-		this.description = description;
-	}
 }
