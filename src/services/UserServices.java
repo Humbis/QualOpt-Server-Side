@@ -2,6 +2,9 @@ package services;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,6 +29,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -155,7 +159,7 @@ public class UserServices {
 			throw e;
 		}
 		
-		return null;
+		return Response.status(Status.ACCEPTED).build();
 	}
 	
 	@Secured
@@ -209,7 +213,7 @@ public class UserServices {
 	@Path("/email")
 	@Produces(MediaType.APPLICATION_XML)
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-	public Response emailParticipants(@FormParam("senderemail") String sender , @FormParam("surveylink") String surveyLink ,@FormParam("subject") String subject, @FormParam("emailbody") String email) throws Exception{
+	public Response emailParticipants(@FormParam("senderemail") String sender ,@FormParam("password") String password , @FormParam("surveylink") String surveyLink ,@FormParam("subject") String subject, @FormParam("emailbody") String email) throws Exception{
 		mailServerProperties = System.getProperties();
 		mailServerProperties.put("mail.smtp.port", "587");
 		mailServerProperties.put("mail.smtp.auth", "true");
@@ -221,17 +225,69 @@ public class UserServices {
 		generateMailMessage.addRecipient(Message.RecipientType.TO, new InternetAddress("experimental1499@gmail.com")); //Using my email to test
 		generateMailMessage.setSubject(subject);
 		
+		surveyLink = new StringBuilder().append("http://localhost:8080/QualOptServer/services/user/record?link=").append(surveyLink)
+				.append("&name=").append(currentStudy.getName()).toString();
+		
 		email = new StringBuilder().append(email).append("<br/><br/><br/>").append("Survey link: ").append(surveyLink)
-				.append("<br/>").append(currentStudy.getDescription()).append("<br/>").append(currentStudy.getIncentive()).toString();
+				.append("<br/>").append(currentStudy.getDescription()).append("<br/>").append(currentStudy.getIncentive()).append("<br/>")
+				.append("To unsubscribe from future surveys, click the following link: ")
+				.append("http://localhost:8080/QualOptServer/services/user/unsubscribe?email=" + URLEncoder.encode("experimental1499@gmail.com", "UTF-8") + "/")	//testing with my email
+				.toString();
 		
 		generateMailMessage.setContent(email, "text/html");
 		
 		Transport transport = getMailSession.getTransport("smtp");
 		
-		transport.connect("smtp.gmail.com", "experimentalsender@gmail.com", "test1499");
+		transport.connect("smtp.gmail.com", sender, password);
 		transport.sendMessage(generateMailMessage, generateMailMessage.getAllRecipients());
 		transport.close();
 		
 		return Response.status(Status.ACCEPTED).build();
 	}
+	
+	@GET
+	@Path("/unsubscribe")
+	@Produces(MediaType.APPLICATION_XML)
+	@Consumes({"text/plain,text/html,application/json"})
+	public Response unsubscribe(@QueryParam("email") String email) throws Exception{
+		email = URLDecoder.decode(email, "UTF-8");
+		try {
+			DatabaseConnection database = new DatabaseConnection();
+			Connection con = database.getConnection();
+			String sql = "INSERT INTO UNSUB (email) values (?)";
+			PreparedStatement st = con.prepareStatement(sql);
+			st.setString(1, email);
+			st.execute();
+			con.close();
+		} catch (Exception e) {
+			throw e;
+		}
+		return Response.status(Status.ACCEPTED).build();
+	}
+	
+	@GET
+	@Path("/record")
+	@Produces(MediaType.APPLICATION_XML)
+	@Consumes({"text/plain,text/html,application/json"})
+	public Response recordParticipant(@QueryParam("link") String surveyLink, @QueryParam("name") String studyName) throws Exception{
+		
+		try {
+			DatabaseConnection database = new DatabaseConnection();
+			Connection con = database.getConnection();
+			String sql = "UPDATE STUDY SET CLICKCOUNT = CLICKCOUNT + 1 WHERE NAME = (?)";
+			PreparedStatement st = con.prepareStatement(sql);
+			st.setString(1, studyName);
+			st.execute();
+			con.close();
+		} catch (Exception e) {
+			throw e;
+		}
+		if(!(surveyLink.startsWith("http://") || surveyLink.startsWith("https://"))){
+			surveyLink = "http://" + surveyLink;
+		}
+		URL url = new URL(surveyLink);
+		URI link = url.toURI();
+		return Response.seeOther(link).build();
+	}
+	
 }
