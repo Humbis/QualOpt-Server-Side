@@ -63,6 +63,9 @@ public class Study {
 		this.hasPay = hasPay;
 	}
 
+	/**
+	 * Returns the JSON string equivalent of the study object.
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public String toString() {

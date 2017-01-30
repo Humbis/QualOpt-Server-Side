@@ -6,6 +6,11 @@ import java.lang.annotation.Target;
 
 import javax.ws.rs.NameBinding;
 
+/**
+ * Defines the Secured annotation
+ * @author Kaimin Li
+ *
+ */
 @NameBinding
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Secured { 

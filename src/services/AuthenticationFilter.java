@@ -12,6 +12,13 @@ import javax.ws.rs.ext.Provider;
 
 import domain.LoginSession;
 
+/**
+ * This filter is annotated with "Secured", which triggers whenever a method annotated with "Secured" is called.
+ * This filter makes sure that the client has a token in the current session pool.
+ * If the client fails to provide a valid token an unauthorized HTTP status is returned
+ * @author Kaimin Li
+ *
+ */
 @Secured
 @Provider
 @Priority(Priorities.AUTHENTICATION)
