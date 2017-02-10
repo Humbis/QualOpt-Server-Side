@@ -39,6 +39,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 
 import domain.*;
 
@@ -223,7 +224,7 @@ public class UserServices {
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	public Response updateStudy(@FormParam("name") String name, @FormParam("description") String description,
 			@FormParam("incentive") String incentive, @FormParam("hasPay") String hasPay) throws Exception {
-		
+
 		int sqlHasPay;
 
 		if (hasPay != null) {
@@ -231,16 +232,13 @@ public class UserServices {
 		} else {
 			sqlHasPay = 0;
 		}
-		
+
 		// update the study entry in the database
 		try {
 			DatabaseConnection database = new DatabaseConnection();
 			Connection con = database.getConnection(true);
-			String sql = "UPDATE STUDY SET NAME = '"+ name + 
-					"',DESCRIPTION = '"+ description +
-					"',INCENTIVE = '"+ incentive +
-					"',HASPAY = '"+ sqlHasPay + "'  WHERE "
-					+ "NAME = '" + currentStudy.getName() + "'";
+			String sql = "UPDATE STUDY SET NAME = '" + name + "',DESCRIPTION = '" + description + "',INCENTIVE = '"
+					+ incentive + "',HASPAY = '" + sqlHasPay + "'  WHERE " + "NAME = '" + currentStudy.getName() + "'";
 			PreparedStatement st = con.prepareStatement(sql);
 			st.execute();
 
@@ -293,7 +291,7 @@ public class UserServices {
 	 * Called by the client for emailing.
 	 * 
 	 * @param sender
-	 *            Email address of teh sender account.
+	 *            Email address of the sender account.
 	 * @param password
 	 *            Password for the sender account. This must work with the
 	 *            provided mail server.
@@ -422,65 +420,79 @@ public class UserServices {
 		return Response.seeOther(link).build();
 	}
 
-	public void queryForParticipants(int n) {
+	@GET
+	@Path("/queryght")
+	@Consumes({ "text/plain,text/html,application/json" })
+	public void queryForParticipants(@QueryParam("n") int n) throws JSchException {
 		String user = "ghtorrent"; // GHTorrent user name
 		String host = "web.ghtorrent.org"; // GHTorrent host
 		int port = 22;
 
+		JSch jsch = new JSch();
+		// Add my private key
+		String path = "D:\\Cygwin\\home\\alex\\.ssh\\id_rsa";
+		path = path.replace("\\", "/");
+		jsch.addIdentity(path);
+
+		com.jcraft.jsch.Session session = jsch.getSession(user, host, port);
 		try {
 
-			JSch jsch = new JSch();
-			// Add my private key
-			jsch.addIdentity("MIIEowIBAAKCAQEAztEvxppu+xT06NReA05k8TD3T4AhyVXf9+Rwnn55TsIHvkYj"
-					+ "BlFpE4253gLV4ljEndojINbS+acDSsefFEBsyBzK1BSSDTliSf3hQib7YrciG9R2"
-					+ "/pTF7PQV/RQAt2FCKPmYJPB4baqvHRPKgdrB6CX+AGmSh4A2+nzWwjSbC5VsWm/X"
-					+ "jVRoa6Qusy6UqAj17wbF8zPMLe5vKuRPYCn/a39HQ0QmrLiWITHpYRxWA+L4DAdP"
-					+ "RPcIZPRFpSzUhnbZIRD0ZzEGpsMfgE5bprD/f4dCsOuXIj0wlgy5NQJGk3b/UDeY"
-					+ "Ip9vktyhRWwjkY/OiLhOTrCcQ6o7O8fE47y0qwIDAQABAoIBAHbZ5Bi/2xNTYcMD"
-					+ "d9tyi7PHrffz7HalcQYmM0oB6HiILKb961bQJhBkm/Gns35WAPetyg4vJiLuBYhN"
-					+ "229p7pm5Yh4qjBwpZACdc3vupvx9vY48tP1sRan8Qz6i5h58N+cQOIzR3IM5WVTe"
-					+ "cLvbGR/t5WAbS2evGOkuIMSOMqOefHGUNpALgMnuXFRlog92InB6ONA9owJJz+W3"
-					+ "0oUT3W4kP9JLRGt+ZNTuBHUR3HKNf0GNeKg0pSYJd4taIVayKlgUKESwDlmpCmr1"
-					+ "O+ZPP+jHkiLW85crzLLz1UioAhm2m54eNxkHY6oLrbLHWswZbch8ZK2pDHERKzfo"
-					+ "yW152+ECgYEA70X5fz1uFAVrx9nx6rT8sc6UoI3+m2xXy8Mt4OgNfzwoPb2P5s47"
-					+ "fWriQsdcg9vLiHCQzb8+xtokTNrBOCfeeyoWA/iwyQgA6CQkntia66zWSTZbRGzA"
-					+ "9eaMOdJ87Q14rap7SZK2urvTQ3hkm8LQqWAwI1XLES8nVTkrvaAuU1MCgYEA3UZg"
-					+ "kMFRrjx9nDBMDMLajSOi2MXjuRxQMJaaMaQL5fQ/FXDpGberp+UnAdAgJFjGMicM"
-					+ "IHIKHRAyzrW3zcs7qIsJIS0YV/tlfKbXL2ya6KjyIJL1bFj26+LYW6Cxn0d7Cla5"
-					+ "kOwsGo8ET5riprY76s+UyhHNx3rsEHxqx5XBBkkCgYA4kH1D9DzCpOlu7HoBN1oJ"
-					+ "msGOFyNakMlMlU6SPal7K7iDp/2N3bE4m/zzNngLf/lkvt+slAp+LfGo7YoCAYLZ"
-					+ "8QAVXkREsgys1GaH2sL89fYOhrgau+798suxm64GyEmAHK5anUFvcZmm+J4oKGz1"
-					+ "rZSTteN0o4YT4pkRkf2BmwKBgA3cH6ZRhZU9UrzaxZizB895YPTlCEuK+3bfqA7d"
-					+ "8KTZtK3aIa+rsoPUtanGaIz+RoPTsE3D9uA1KImMFlQ8m6MF+m9qjLDOHWA+bxIY"
-					+ "YmeaVXg23EqKFAVYcybiHN4WMx3Fqt/p+yU6uhFmaTX6Ciy+DdrOXK5XA7xQnrub"
-					+ "pLiJAoGBANMoObScNLjW5RccUXZW76B5wHgpqZw5R3TbCDEK8ooPPJClTZdkZkKS"
-					+ "N+PJ03qNVDUr4x6QcPB9CymGx2PpWS42VoqdIlcrlDPNTl0/xR5O2EqCnPDku86l"
-					+ "TD3Hvqp6hjwRv3IMELSaQtMklaa+QZihcJzcg9noCOiD5NolYlbs");
-
-			com.jcraft.jsch.Session session = jsch.getSession(user, host, port);
 			session.setConfig("StrictHostKeyChecking", "no");
-			session.setPortForwardingL(3306, host, 3306);
+
 			System.out.println("Establishing Connection...");
 			session.connect();
+			int assignedPort = session.setPortForwardingL(3306, host, 3306);
 
-			System.out.println("Connection established.");
-			System.out.println("Crating SFTP Channel.");
-			ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
-			sftpChannel.connect();
-			System.out.println("SFTP Channel created.");
+			System.out.println("Connection established. Port given = " + assignedPort);
+			// System.out.println("Creating SFTP Channel.");
+			// ChannelSftp sftpChannel = (ChannelSftp)
+			// session.openChannel("sftp");
+			// sftpChannel.connect();
+			// System.out.println("SFTP Channel created.");
 
-			// TODO: GHTorrent query
+			// TODO: GHTorrent querys
 			DatabaseConnection database = new DatabaseConnection();
 			Connection con = database.getConnection(false);
-			String sql = "TODO";
+			// Test query, currently the database connection to GHTorrent does
+			// not work
+			String sql = "select u.country_code, count(*)" + "from commits c, users u"
+					+ "where c.author_id = u.idand date(c.created_at) = date(now())" + "group by u.country_code";
 			PreparedStatement st = con.prepareStatement(sql);
-			st.execute();
-			con.close();
+			ResultSet rs = st.executeQuery();
+			System.out.println(rs.next());
 
+			con.close();
+			session.disconnect();
 		} catch (Exception e) {
 			System.err.print(e);
+			session.disconnect();
 		}
 
+	}
+
+	/**
+	 * This is called when the user wishes to apply filters when retrieving participants
+	 * This will generate the appropriate SQL query, used to query GHTorrent
+	 * Currently the database connection to GHTorrent does not work
+	 * @param language
+	 * @return
+	 */
+	@Secured
+	@POST
+	@Path("/filter")
+	@Produces(MediaType.APPLICATION_XML)
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	public Response filter(@FormParam("languages")String language, @FormParam("participants")int participantCount){
+		//SQL for the language filter, meant to be for the GHTorrent database. 
+		//As more filters get implemented this will need to change
+		
+		String sql = "select email from users u, projects p where "
+				+ "u.id = p.id and p.language = " 
+				+ language + " limit " + participantCount + ";";
+		
+		//For testing
+		System.out.println(sql);
+		return Response.status(Status.ACCEPTED).build();
 	}
 
 }

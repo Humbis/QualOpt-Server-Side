@@ -19,17 +19,18 @@ public class DatabaseConnection {
 		String user; 
 		String password; 
 		if(isQualOpt){
-			url = "jdbc:mysql://localhost:3306/qualopt";
+			url = "jdbc:mysql://localhost:3307/qualopt";
 			user = "testuser";
 			password = "admin";
 		}else{
-			url = "jdbc:mysql://127.0.0.1:3306/ghtorrent";
+			url = "jdbc:mysql://localhost:3306/ghtorrent";
 			user = "ght";
-			password = "";
+			password = null;
 		}
 		
 
 		try {
+			System.out.println("url: " + url + " user = " + user + " pass = " + password);
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 			con = DriverManager.getConnection(url, user, password);
 		} catch (SQLException ex) {
