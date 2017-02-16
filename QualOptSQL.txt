@@ -1,0 +1,27 @@
+ CREATE TABLE `user_profiles` (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `EMAIL` varchar(254) NOT NULL,
+  `PASSWORD` varchar(20) NOT NULL,
+  `PROFESSION` varchar(50) NOT NULL,
+  `INSTITUTE` varchar(50) NOT NULL,
+  `mailserver` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`ID`)
+)
+
+CREATE TABLE `study` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `u_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4000) NOT NULL,
+  `incentive` varchar(4000) NOT NULL,
+  `haspay` tinyint(1) NOT NULL,
+  `clickcount` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `u_id` (`u_id`),
+  CONSTRAINT `study_ibfk_1` FOREIGN KEY (`u_id`) REFERENCES `user_profiles` (`ID`)
+)
+
+CREATE TABLE `unsub` (
+  `email` varchar(100) NOT NULL,
+  PRIMARY KEY (`email`)
+)
